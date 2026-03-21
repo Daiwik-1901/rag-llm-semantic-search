@@ -11,23 +11,47 @@ load_dotenv()
 def get_api_key():
     try:
         # Try Streamlit secrets first (for Streamlit Cloud)
-        return st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+        secret_key = st.secrets.get("OPENROUTER_API_KEY")
+        if secret_key:
+            return secret_key
     except:
-        # Fallback to environment variable
-        return os.getenv("OPENROUTER_API_KEY")
+        pass
+    
+    # Fallback to environment variable
+    env_key = os.getenv("OPENROUTER_API_KEY")
+    return env_key
 
 api_key = get_api_key()
 
 if not api_key:
-    st.error("❌ API Key not found! Please set OPENROUTER_API_KEY in Streamlit secrets or .env file")
+    st.error("""
+    ❌ **API Key not found!**
+    
+    Please add your OpenRouter API key:
+    
+    1. Click the ⋮ (three dots) on your app card at share.streamlit.io
+    2. Select "Settings"
+    3. Go to "Secrets" tab
+    4. Add this line:
+    ```
+    OPENROUTER_API_KEY = "sk-or-v1-your-api-key-here"
+    ```
+    5. Click "Save" and then "Reboot app"
+    
+    **Note:** Make sure to include the quotes around your API key!
+    """)
     st.stop()
 
 # Setup embeddings with OpenRouter
-embedding_model = OpenAIEmbeddings(
-    model="text-embedding-3-small",
-    openai_api_base="https://openrouter.ai/api/v1",
-    openai_api_key=api_key
-)
+try:
+    embedding_model = OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        openai_api_base="https://openrouter.ai/api/v1",
+        openai_api_key=api_key
+    )
+except Exception as e:
+    st.error(f"❌ Error initializing embeddings: {str(e)}")
+    st.stop()
 
 # Cache the vector store loading for performance
 @st.cache_resource
