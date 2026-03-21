@@ -7,11 +7,26 @@ import os
 # Load environment variables
 load_dotenv()
 
+# Get API key from Streamlit secrets or environment
+def get_api_key():
+    try:
+        # Try Streamlit secrets first (for Streamlit Cloud)
+        return st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+    except:
+        # Fallback to environment variable
+        return os.getenv("OPENROUTER_API_KEY")
+
+api_key = get_api_key()
+
+if not api_key:
+    st.error("❌ API Key not found! Please set OPENROUTER_API_KEY in Streamlit secrets or .env file")
+    st.stop()
+
 # Setup embeddings with OpenRouter
 embedding_model = OpenAIEmbeddings(
     model="text-embedding-3-small",
     openai_api_base="https://openrouter.ai/api/v1",
-    openai_api_key=os.getenv("OPENROUTER_API_KEY")
+    openai_api_key=api_key
 )
 
 # Cache the vector store loading for performance
